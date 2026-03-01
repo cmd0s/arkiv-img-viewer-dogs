@@ -1,0 +1,82 @@
+diff --git a/node_modules/@arkiv-network/sdk/dist/index.cjs b/node_modules/@arkiv-network/sdk/dist/index.cjs
+index cc114e7..be02402 100644
+--- a/node_modules/@arkiv-network/sdk/dist/index.cjs
++++ b/node_modules/@arkiv-network/sdk/dist/index.cjs
+@@ -74,13 +74,13 @@ async function query(client, query$1, queryOptions) {
+ 			transactionIndexInBlock: queryOptions?.includeData?.metadata ?? false,
+ 			operationIndexInTransaction: queryOptions?.includeData?.metadata ?? false
+ 		},
+-		...queryOptions?.atBlock !== void 0 && { atBlock: (0, viem.numberToHex)(queryOptions.atBlock) },
++		...queryOptions?.atBlock !== void 0 && { atBlock: queryOptions.atBlock },
+ 		...queryOptions?.orderBy && { orderBy: queryOptions?.orderBy.map((order) => ({
+ 			name: order.name,
+ 			type: order.type,
+ 			desc: order.desc === "desc"
+ 		})) },
+-		...queryOptions?.resultsPerPage !== void 0 && { resultsPerPage: (0, viem.numberToHex)(queryOptions.resultsPerPage) },
++		...queryOptions?.resultsPerPage !== void 0 && { resultsPerPage: queryOptions.resultsPerPage },
+ 		...queryOptions?.cursor !== void 0 && { cursor: queryOptions?.cursor }
+ 	};
+ 	const result = await client.request({
+diff --git a/node_modules/@arkiv-network/sdk/dist/index.js b/node_modules/@arkiv-network/sdk/dist/index.js
+index adb64c1..25aa43d 100644
+--- a/node_modules/@arkiv-network/sdk/dist/index.js
++++ b/node_modules/@arkiv-network/sdk/dist/index.js
+@@ -76,13 +76,13 @@ async function query(client, query$1, queryOptions) {
+ 			transactionIndexInBlock: queryOptions?.includeData?.metadata ?? false,
+ 			operationIndexInTransaction: queryOptions?.includeData?.metadata ?? false
+ 		},
+-		...queryOptions?.atBlock !== void 0 && { atBlock: numberToHex(queryOptions.atBlock) },
++		...queryOptions?.atBlock !== void 0 && { atBlock: queryOptions.atBlock },
+ 		...queryOptions?.orderBy && { orderBy: queryOptions?.orderBy.map((order) => ({
+ 			name: order.name,
+ 			type: order.type,
+ 			desc: order.desc === "desc"
+ 		})) },
+-		...queryOptions?.resultsPerPage !== void 0 && { resultsPerPage: numberToHex(queryOptions.resultsPerPage) },
++		...queryOptions?.resultsPerPage !== void 0 && { resultsPerPage: queryOptions.resultsPerPage },
+ 		...queryOptions?.cursor !== void 0 && { cursor: queryOptions?.cursor }
+ 	};
+ 	const result = await client.request({
+diff --git a/node_modules/@arkiv-network/sdk/dist/queryBuilder-CE7didAc.cjs b/node_modules/@arkiv-network/sdk/dist/queryBuilder-CE7didAc.cjs
+index d1a8289..9c30804 100644
+--- a/node_modules/@arkiv-network/sdk/dist/queryBuilder-CE7didAc.cjs
++++ b/node_modules/@arkiv-network/sdk/dist/queryBuilder-CE7didAc.cjs
+@@ -238,13 +238,13 @@ async function processQuery(client, queryParams) {
+ 		transactionIndexInBlock: withMetadata ?? false,
+ 		operationIndexInTransaction: withMetadata ?? false
+ 	} };
+-	if (validAtBlock !== void 0) queryOptions.atBlock = (0, viem.numberToHex)(validAtBlock);
+-	if (limit !== void 0) queryOptions.resultsPerPage = (0, viem.numberToHex)(limit);
++	if (validAtBlock !== void 0) queryOptions.atBlock = validAtBlock;
++	if (limit !== void 0) queryOptions.resultsPerPage = limit;
+ 	if (cursor !== void 0) queryOptions.cursor = cursor;
+ 	if (orderBy !== void 0) queryOptions.orderBy = orderBy;
+ 	logger$1("Built query to send %s %o", query, {
+ 		includeData: queryOptions.includeData,
+-		atBlock: queryOptions.atBlock ? (0, viem.hexToNumber)(queryOptions.atBlock) : void 0,
++		atBlock: queryOptions.atBlock ?? void 0,
+ 		orderBy: queryOptions.orderBy,
+ 		resultsPerPage: queryOptions.resultsPerPage,
+ 		cursor: queryOptions.cursor
+diff --git a/node_modules/@arkiv-network/sdk/dist/queryBuilder-UO2ZKHFN.js b/node_modules/@arkiv-network/sdk/dist/queryBuilder-UO2ZKHFN.js
+index c987715..10276c5 100644
+--- a/node_modules/@arkiv-network/sdk/dist/queryBuilder-UO2ZKHFN.js
++++ b/node_modules/@arkiv-network/sdk/dist/queryBuilder-UO2ZKHFN.js
+@@ -238,13 +238,13 @@ async function processQuery(client, queryParams) {
+ 		transactionIndexInBlock: withMetadata ?? false,
+ 		operationIndexInTransaction: withMetadata ?? false
+ 	} };
+-	if (validAtBlock !== void 0) queryOptions.atBlock = numberToHex(validAtBlock);
+-	if (limit !== void 0) queryOptions.resultsPerPage = numberToHex(limit);
++	if (validAtBlock !== void 0) queryOptions.atBlock = validAtBlock;
++	if (limit !== void 0) queryOptions.resultsPerPage = limit;
+ 	if (cursor !== void 0) queryOptions.cursor = cursor;
+ 	if (orderBy !== void 0) queryOptions.orderBy = orderBy;
+ 	logger$1("Built query to send %s %o", query, {
+ 		includeData: queryOptions.includeData,
+-		atBlock: queryOptions.atBlock ? hexToNumber(queryOptions.atBlock) : void 0,
++		atBlock: queryOptions.atBlock ?? void 0,
+ 		orderBy: queryOptions.orderBy,
+ 		resultsPerPage: queryOptions.resultsPerPage,
+ 		cursor: queryOptions.cursor

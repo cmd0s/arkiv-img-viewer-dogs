@@ -4,11 +4,13 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
+    "postinstall": "patch-package",
     "start": "node --experimental-strip-types server.ts",
     "dev": "node --experimental-strip-types --watch server.ts"
   },
   "dependencies": {
-    "@arkiv-network/sdk": "^0.5.3",
-    "dotenv": "^16.4.5"
+    "@arkiv-network/sdk": "^0.6.2",
+    "dotenv": "^16.4.5",
+    "patch-package": "^8.0.1"
   }
 }
