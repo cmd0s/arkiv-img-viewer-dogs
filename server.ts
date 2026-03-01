@@ -36,6 +36,58 @@ const publicClient = createPublicClient({
   transport: http(),
 })
 
+// RPC semaphore - max 8 concurrent calls to avoid Mendoza rate limiting
+const MAX_CONCURRENT_RPC = 8
+let activeRpcCalls = 0
+const rpcQueue: (() => void)[] = []
+
+function acquireRpc(): Promise<void> {
+  if (activeRpcCalls < MAX_CONCURRENT_RPC) {
+    activeRpcCalls++
+    return Promise.resolve()
+  }
+  return new Promise<void>((resolve) => {
+    rpcQueue.push(() => {
+      activeRpcCalls++
+      resolve()
+    })
+  })
+}
+
+function releaseRpc(): void {
+  const next = rpcQueue.shift()
+  if (next) {
+    next()
+  } else {
+    activeRpcCalls--
+  }
+}
+
+// LRU image cache - max 1000 entries
+const MAX_IMAGE_CACHE = 1000
+const imageCache = new Map<string, Buffer>()
+
+function cacheGet(key: string): Buffer | undefined {
+  const value = imageCache.get(key)
+  if (value !== undefined) {
+    // Move to end (MRU position)
+    imageCache.delete(key)
+    imageCache.set(key, value)
+  }
+  return value
+}
+
+function cacheSet(key: string, data: Buffer): void {
+  if (imageCache.has(key)) {
+    imageCache.delete(key)
+  } else if (imageCache.size >= MAX_IMAGE_CACHE) {
+    // Evict oldest (first) entry
+    const oldest = imageCache.keys().next().value!
+    imageCache.delete(oldest)
+  }
+  imageCache.set(key, data)
+}
+
 interface ImageMeta {
   key: string
   id: string
@@ -120,17 +172,36 @@ async function getNextPage(sessionId: string): Promise<{ images: ImageMeta[]; ha
   }
 }
 
-// Fetch single image by key
+// Fetch single image by key with cache, semaphore, and retry
+const MAX_RETRIES = 2
+
 async function fetchImage(key: string): Promise<Buffer | null> {
-  try {
-    const entity = await publicClient.getEntity(key)
-    if (entity?.payload) {
-      return Buffer.from(entity.payload)
+  const cached = cacheGet(key)
+  if (cached) return cached
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    await acquireRpc()
+    try {
+      const entity = await publicClient.getEntity(key)
+      if (entity?.payload) {
+        const data = Buffer.from(entity.payload)
+        cacheSet(key, data)
+        return data
+      }
+      return null
+    } catch (error) {
+      if (attempt < MAX_RETRIES) {
+        console.warn(`fetchImage retry ${attempt}/${MAX_RETRIES} for ${key}:`, error)
+        await new Promise((r) => setTimeout(r, 200 * attempt))
+      } else {
+        console.error(`fetchImage failed after ${MAX_RETRIES} attempts for ${key}:`, error)
+        return null
+      }
+    } finally {
+      releaseRpc()
     }
-    return null
-  } catch {
-    return null
   }
+  return null
 }
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse) {
@@ -141,7 +212,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse) {
     try {
       const sessionId = url.searchParams.get("sessionId")
       const limitParam = url.searchParams.get("limit")
-      const perPage = limitParam ? Math.min(parseInt(limitParam), 1000) : 50
+      const perPage = limitParam ? Math.min(parseInt(limitParam), 200) : 50
 
       if (sessionId) {
         // Continue existing session
