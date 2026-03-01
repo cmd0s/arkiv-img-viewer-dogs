@@ -130,13 +130,19 @@ function parseEntities(entities: any[]): ImageMeta[] {
 // Create new pagination session
 async function createSession(perPage: number): Promise<{ sessionId: string; images: ImageMeta[]; hasMore: boolean }> {
   const query = publicClient.buildQuery()
-  const result = await query
-    .ownedBy(OWNER_ADDRESS)
-    .withPayload(false)
-    .withAttributes(true)
-    .orderBy("id", "number", "desc")
-    .limit(perPage)
-    .fetch()
+  await acquireRpc()
+  let result: any
+  try {
+    result = await query
+      .ownedBy(OWNER_ADDRESS)
+      .withPayload(false)
+      .withAttributes(true)
+      .orderBy("id", "number", "desc")
+      .limit(perPage)
+      .fetch()
+  } finally {
+    releaseRpc()
+  }
 
   const sessionId = randomBytes(8).toString("hex")
   sessionCache.set(sessionId, {
@@ -162,7 +168,12 @@ async function getNextPage(sessionId: string): Promise<{ images: ImageMeta[]; ha
     return { images: [], hasMore: false }
   }
 
-  await session.result.next()
+  await acquireRpc()
+  try {
+    await session.result.next()
+  } finally {
+    releaseRpc()
+  }
   session.currentPage++
   session.createdAt = Date.now() // Refresh TTL
 
