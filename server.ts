@@ -9,6 +9,22 @@ import { defineChain } from "viem"
 
 config()
 
+// Workaround: @arkiv-network/sdk sends atBlock as string in pagination cursor,
+// but the Mendoza RPC expects uint64. Patch fetch to fix serialization.
+const _nativeFetch = globalThis.fetch
+globalThis.fetch = async function (input: any, init?: any) {
+  if (init?.body && typeof init.body === "string" && init.body.includes('"atBlock"')) {
+    try {
+      const body = JSON.parse(init.body)
+      if (body.params?.[1]?.atBlock !== undefined && typeof body.params[1].atBlock === "string") {
+        body.params[1].atBlock = Number(body.params[1].atBlock)
+        return _nativeFetch(input, { ...init, body: JSON.stringify(body) })
+      }
+    } catch {}
+  }
+  return _nativeFetch(input, init)
+} as typeof fetch
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PORT = 8087
 const OWNER_ADDRESS = process.env.ACCOUNT_ADR! as `0x${string}`
